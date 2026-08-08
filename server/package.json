@@ -19,7 +19,8 @@
     "test:rbac": "tsx src/scripts/test-rbac.ts",
     "test:customers": "tsx src/scripts/test-customers.ts",
     "test:followups": "tsx src/scripts/test-followups.ts",
-    "test:products": "tsx src/scripts/test-products.ts"
+    "test:products": "tsx src/scripts/test-products.ts",
+    "test:inventory": "tsx src/scripts/test-inventory.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

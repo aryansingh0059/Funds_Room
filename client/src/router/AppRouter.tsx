@@ -7,6 +7,7 @@ import CustomerDetailPage from '../pages/customers/CustomerDetailPage';
 import CustomerFormPage from '../pages/customers/CustomerFormPage';
 import ProductsPage from '../pages/products/ProductsPage';
 import ProductFormPage from '../pages/products/ProductFormPage';
+import InventoryPage from '../pages/inventory/InventoryPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
 
 const router = createBrowserRouter([
@@ -31,7 +32,8 @@ const router = createBrowserRouter([
       { path: 'products', element: <ProductsPage /> },
       { path: 'products/new', element: <ProductFormPage mode="create" /> },
       { path: 'products/:id/edit', element: <ProductFormPage mode="edit" /> },
-      { path: 'stock', element: <PlaceholderPage title="Inventory & Stock" subtitle="Warehouse stock management — coming in Phase 8" /> },
+      { path: 'inventory', element: <InventoryPage /> },
+      { path: 'stock', element: <InventoryPage /> },
       { path: 'challans', element: <PlaceholderPage title="Sales Challans" subtitle="Dispatch and invoicing — coming in Phase 9" /> },
       { path: 'reports', element: <PlaceholderPage title="Reports" subtitle="Business intelligence reports — coming soon" /> },
       { path: 'users', element: <PlaceholderPage title="User Management" subtitle="Manage staff accounts and roles — ADMIN only" /> },

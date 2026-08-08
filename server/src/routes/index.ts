@@ -6,6 +6,7 @@ import usersRouter from './users.routes';
 import customersRouter from './customers.routes';
 import productsRouter from './products.routes';
 import stockRouter from './stock.routes';
+import inventoryRouter from './inventory.routes';
 import challansRouter from './challans.routes';
 
 const apiRouter = Router();
@@ -22,6 +23,7 @@ apiRouter.use('/users', usersRouter);
 apiRouter.use('/customers', customersRouter);
 apiRouter.use('/products', productsRouter);
 apiRouter.use('/stock', stockRouter);
+apiRouter.use('/inventory', inventoryRouter);
 apiRouter.use('/challans', challansRouter);
 
 export default apiRouter;

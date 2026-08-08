@@ -24,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', to: '/dashboard', icon: LayoutDashboard },
   { label: 'Customers', to: '/customers', icon: Users },
   { label: 'Products', to: '/products', icon: Package },
-  { label: 'Inventory', to: '/stock', icon: Warehouse },
+  { label: 'Inventory', to: '/inventory', icon: Warehouse },
   { label: 'Sales Challans', to: '/challans', icon: FileText },
   { label: 'Reports', to: '/reports', icon: TrendingUp },
   { label: 'User Management', to: '/users', icon: ShieldCheck, roles: ['ADMIN'] },
