@@ -64,3 +64,11 @@ export interface CustomerListParams {
   sortBy?: 'name' | 'createdAt' | 'outstandingBalance' | 'creditLimit' | 'companyName';
   sortOrder?: 'asc' | 'desc';
 }
+
+export interface FollowupFormData {
+  type: FollowupType;
+  status?: FollowupStatus;
+  followupDate: string;
+  notes: string;
+  outcome?: string;
+}

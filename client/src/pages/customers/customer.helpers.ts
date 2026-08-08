@@ -1,6 +1,19 @@
-import type { CustomerStatus, CustomerType } from '../../types/customer.types';
+import type {
+  CustomerStatus,
+  CustomerType,
+  FollowupType,
+  FollowupStatus,
+} from '../../types/customer.types';
 
-export type BadgeVariant = 'green' | 'red' | 'yellow' | 'blue' | 'purple' | 'orange' | 'slate' | 'cyan';
+export type BadgeVariant =
+  | 'green'
+  | 'red'
+  | 'yellow'
+  | 'blue'
+  | 'purple'
+  | 'orange'
+  | 'slate'
+  | 'cyan';
 
 export const CUSTOMER_STATUS_VARIANT: Record<CustomerStatus, BadgeVariant> = {
   ACTIVE: 'green',
@@ -30,6 +43,34 @@ export const CUSTOMER_STATUS_LABELS: Record<CustomerStatus, string> = {
   BLOCKED: 'Blocked',
 };
 
+export const FOLLOWUP_TYPE_LABELS: Record<FollowupType, string> = {
+  CALL: 'Phone Call',
+  EMAIL: 'Email',
+  MEETING: 'Meeting',
+  SITE_VISIT: 'Site Visit',
+  WHATSAPP: 'WhatsApp',
+};
+
+export const FOLLOWUP_TYPE_VARIANT: Record<FollowupType, BadgeVariant> = {
+  CALL: 'blue',
+  EMAIL: 'purple',
+  MEETING: 'cyan',
+  SITE_VISIT: 'orange',
+  WHATSAPP: 'green',
+};
+
+export const FOLLOWUP_STATUS_LABELS: Record<FollowupStatus, string> = {
+  PENDING: 'Pending',
+  COMPLETED: 'Completed',
+  CANCELLED: 'Cancelled',
+};
+
+export const FOLLOWUP_STATUS_VARIANT: Record<FollowupStatus, BadgeVariant> = {
+  PENDING: 'yellow',
+  COMPLETED: 'green',
+  CANCELLED: 'slate',
+};
+
 export const formatCurrency = (value: string | number): string => {
   const num = typeof value === 'string' ? parseFloat(value) : value;
   if (isNaN(num)) return '₹0';
@@ -46,5 +87,15 @@ export const formatDate = (dateString: string): string => {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
+  });
+};
+
+export const formatDateTime = (dateString: string): string => {
+  return new Date(dateString).toLocaleString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 };

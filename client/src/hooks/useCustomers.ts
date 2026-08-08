@@ -1,7 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { AxiosError } from 'axios';
 import apiClient from '../lib/axios';
-import type { Customer, CustomerFormData, CustomerListParams } from '../types/customer.types';
+import type {
+  Customer,
+  CustomerFormData,
+  CustomerListParams,
+  CustomerFollowup,
+  FollowupFormData,
+} from '../types/customer.types';
 import type { ApiResponse, PaginationMeta } from '../types/api.types';
 
 interface CustomerListResponse {
@@ -86,6 +92,46 @@ export function useDeleteCustomer() {
       await apiClient.delete(`/customers/${id}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+    },
+  });
+}
+
+interface FollowupListResponse {
+  followups: CustomerFollowup[];
+}
+
+interface SingleFollowupResponse {
+  followup: CustomerFollowup;
+}
+
+export function useFollowups(customerId: string) {
+  return useQuery<CustomerFollowup[], AxiosError>({
+    queryKey: ['customers', customerId, 'followups'],
+    queryFn: async () => {
+      const res = await apiClient.get<ApiResponse<FollowupListResponse>>(
+        `/customers/${customerId}/followups`,
+      );
+      return (res.data.data as FollowupListResponse).followups;
+    },
+    enabled: !!customerId,
+  });
+}
+
+export function useCreateFollowup(customerId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<CustomerFollowup, AxiosError<ApiResponse>, FollowupFormData>({
+    mutationFn: async (data) => {
+      const res = await apiClient.post<ApiResponse<SingleFollowupResponse>>(
+        `/customers/${customerId}/followups`,
+        data,
+      );
+      return (res.data.data as SingleFollowupResponse).followup;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers', customerId] });
+      queryClient.invalidateQueries({ queryKey: ['customers', customerId, 'followups'] });
       queryClient.invalidateQueries({ queryKey: ['customers'] });
     },
   });

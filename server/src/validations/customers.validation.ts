@@ -74,6 +74,29 @@ export const customerQuerySchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
 });
 
+export const createFollowupSchema = z.object({
+  type: z.enum(['CALL', 'EMAIL', 'MEETING', 'SITE_VISIT', 'WHATSAPP'], {
+    errorMap: () => ({ message: 'Please select a valid follow-up type' }),
+  }),
+  status: z
+    .enum(['PENDING', 'COMPLETED', 'CANCELLED'], {
+      errorMap: () => ({ message: 'Please select a valid status' }),
+    })
+    .optional()
+    .default('PENDING'),
+  followupDate: z.string().min(1, 'Follow-up date is required'),
+  notes: z
+    .string()
+    .trim()
+    .min(1, 'Notes are required')
+    .max(2000, 'Notes cannot exceed 2000 characters'),
+  outcome: z.string().trim().max(1000, 'Outcome cannot exceed 1000 characters').optional().or(z.literal('')),
+});
+
+export const updateFollowupSchema = createFollowupSchema.partial();
+
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
 export type UpdateCustomerInput = z.infer<typeof updateCustomerSchema>;
 export type CustomerQueryInput = z.infer<typeof customerQuerySchema>;
+export type CreateFollowupInput = z.infer<typeof createFollowupSchema>;
+export type UpdateFollowupInput = z.infer<typeof updateFollowupSchema>;

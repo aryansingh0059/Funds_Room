@@ -5,6 +5,8 @@ import {
   createCustomerSchema,
   updateCustomerSchema,
   customerQuerySchema,
+  createFollowupSchema,
+  updateFollowupSchema,
 } from '../validations/customers.validation';
 import { sendSuccess, sendError } from '../utils/response';
 
@@ -251,28 +253,24 @@ export const createFollowup = async (req: Request, res: Response): Promise<void>
       return;
     }
 
-    const { type, status, followupDate, notes, outcome } = req.body as {
-      type: string;
-      status: string;
-      followupDate: string;
-      notes: string;
-      outcome?: string;
-    };
-
-    if (!type || !followupDate || !notes) {
-      sendError(res, 'type, followupDate, and notes are required', null, 400);
+    const parseResult = createFollowupSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      const message = parseResult.error.errors.map((e) => e.message).join('; ');
+      sendError(res, message, parseResult.error.format(), 400);
       return;
     }
+
+    const data = parseResult.data;
 
     const followup = await prisma.customerFollowup.create({
       data: {
         customerId: id,
         userId: req.user.userId,
-        type: type as 'CALL' | 'EMAIL' | 'MEETING' | 'SITE_VISIT' | 'WHATSAPP',
-        status: (status as 'PENDING' | 'COMPLETED' | 'CANCELLED') || 'PENDING',
-        followupDate: new Date(followupDate),
-        notes,
-        outcome: outcome ?? null,
+        type: data.type,
+        status: data.status ?? 'PENDING',
+        followupDate: new Date(data.followupDate),
+        notes: data.notes,
+        outcome: data.outcome || null,
       },
       include: {
         user: { select: { id: true, name: true, email: true, role: true } },
@@ -298,13 +296,23 @@ export const updateFollowup = async (req: Request, res: Response): Promise<void>
       return;
     }
 
+    const parseResult = updateFollowupSchema.safeParse(req.body);
+    if (!parseResult.success) {
+      const message = parseResult.error.errors.map((e) => e.message).join('; ');
+      sendError(res, message, parseResult.error.format(), 400);
+      return;
+    }
+
+    const data = parseResult.data;
+
     const updated = await prisma.customerFollowup.update({
       where: { id: followupId },
       data: {
-        ...(req.body.status && { status: req.body.status }),
-        ...(req.body.notes && { notes: req.body.notes }),
-        ...(req.body.outcome !== undefined && { outcome: req.body.outcome }),
-        ...(req.body.followupDate && { followupDate: new Date(req.body.followupDate) }),
+        ...(data.status && { status: data.status }),
+        ...(data.notes && { notes: data.notes }),
+        ...(data.outcome !== undefined && { outcome: data.outcome || null }),
+        ...(data.type && { type: data.type }),
+        ...(data.followupDate && { followupDate: new Date(data.followupDate) }),
       },
       include: {
         user: { select: { id: true, name: true, email: true, role: true } },
