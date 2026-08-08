@@ -1,0 +1,17 @@
+{
+  "name": "fundsroom-erp-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Funds Room — Mini ERP + CRM Operations Portal for Wholesale and Distribution",
+  "scripts": {
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "build:server": "npm --prefix server run build",
+    "build:client": "npm --prefix client run build",
+    "lint": "npm --prefix server run lint && npm --prefix client run lint",
+    "format": "npm --prefix server run format && npm --prefix client run format"
+  },
+  "keywords": ["erp", "crm", "wholesale", "distribution", "react", "express", "typescript", "prisma"],
+  "author": "Funds Room Team",
+  "license": "ISC"
+}

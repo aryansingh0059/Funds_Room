@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-main: #090d16;
+    --card-bg: #0f172a;
+    --card-border: #1e293b;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --brand-primary: #0c8fe9;
+    --brand-hover: #0171c7;
+  }
+
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #090d16;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  .glass-card-hover {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(12, 143, 233, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+  }
+}
