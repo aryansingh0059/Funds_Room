@@ -22,7 +22,8 @@
     "test:products": "tsx src/scripts/test-products.ts",
     "test:inventory": "tsx src/scripts/test-inventory.ts",
     "test:movements": "tsx src/scripts/test-stock-movements.ts",
-    "test:challans": "tsx src/scripts/test-challans.ts"
+    "test:challans": "tsx src/scripts/test-challans.ts",
+    "test:challan-transactions": "tsx src/scripts/test-challan-transactions.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -2,6 +2,7 @@ export type ChallanStatus =
   | 'DRAFT'
   | 'PENDING_APPROVAL'
   | 'APPROVED'
+  | 'CONFIRMED'
   | 'DISPATCHED'
   | 'DELIVERED'
   | 'CANCELLED'

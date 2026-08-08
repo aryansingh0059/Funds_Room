@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ChallanStatus, Prisma } from '@prisma/client';
+import { ChallanStatus, MovementType, Prisma } from '@prisma/client';
 import prisma from '../config/prisma';
 import {
   createChallanSchema,
@@ -82,6 +82,14 @@ export const listChallans = async (req: Request, res: Response): Promise<void> =
             },
           },
           createdBy: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+            },
+          },
+          approvedBy: {
             select: {
               id: true,
               name: true,
@@ -292,7 +300,6 @@ export const updateChallan = async (req: Request, res: Response): Promise<void> 
     let currentDiscount = discountAmount !== undefined ? discountAmount : Number(existing.discountAmount);
     let currentTax = taxAmount !== undefined ? taxAmount : Number(existing.taxAmount);
 
-    // If new items are provided, replace existing items and compute new snapshots
     if (items && items.length > 0) {
       const productIds = items.map((i) => i.productId);
       const products = await prisma.product.findMany({
@@ -331,7 +338,6 @@ export const updateChallan = async (req: Request, res: Response): Promise<void> 
 
       const netAmount = Math.max(0, totalAmount - currentDiscount + currentTax);
 
-      // Replace items atomically in transaction
       const updated = await prisma.$transaction(async (tx) => {
         await tx.salesChallanItem.deleteMany({ where: { salesChallanId: id } });
         return tx.salesChallan.update({
@@ -356,7 +362,6 @@ export const updateChallan = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Updating non-item fields only
     const netAmount = Math.max(0, totalAmount - currentDiscount + currentTax);
     const updated = await prisma.salesChallan.update({
       where: { id },
@@ -376,6 +381,218 @@ export const updateChallan = async (req: Request, res: Response): Promise<void> 
     sendSuccess(res, 'Sales challan updated successfully', { challan: updated });
   } catch (error) {
     sendError(res, 'Failed to update sales challan', (error as Error).message, 500);
+  }
+};
+
+/**
+ * Confirm Sales Challan: The critical transaction in the ERP
+ * Strictly checks stock availability for all items before making any changes.
+ * If any item is insufficient, rejects and makes ZERO writes.
+ */
+export const confirmChallan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    if (!req.user) {
+      sendError(res, 'Unauthorized', null, 401);
+      return;
+    }
+
+    // Execute inside a single atomic Prisma transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Read the challan; if not found -> 404. If not currently DRAFT -> 409
+      const challan = await tx.salesChallan.findUnique({
+        where: { id },
+        include: {
+          items: true,
+          customer: true,
+        },
+      });
+
+      if (!challan) {
+        return { errorStatus: 404, message: 'Sales challan not found', error: null };
+      }
+
+      if (challan.status !== ChallanStatus.DRAFT) {
+        return {
+          errorStatus: 409,
+          message: `Cannot confirm challan in "${challan.status}" status. Only DRAFT challans can be confirmed.`,
+          error: { code: 'CHALLAN_NOT_DRAFT', currentStatus: challan.status },
+        };
+      }
+
+      if (!challan.items || challan.items.length === 0) {
+        return {
+          errorStatus: 400,
+          message: 'Cannot confirm a sales challan with no line items.',
+          error: null,
+        };
+      }
+
+      // 2. Validate every referenced product still exists & 3. Validate quantities are positive integers
+      const insufficientStockList: Array<{
+        productId: string;
+        productName: string;
+        sku: string;
+        requested: number;
+        available: number;
+      }> = [];
+
+      for (const item of challan.items) {
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+        });
+
+        if (!product) {
+          return {
+            errorStatus: 404,
+            message: `Referenced product ID "${item.productId}" no longer exists in catalog.`,
+            error: null,
+          };
+        }
+
+        if (item.quantity <= 0) {
+          return {
+            errorStatus: 400,
+            message: `Invalid quantity (${item.quantity}) for product "${product.name}". Must be a positive integer.`,
+            error: null,
+          };
+        }
+
+        // 4. Check stock availability for every line item BEFORE writing anything
+        if (product.currentStock < item.quantity) {
+          insufficientStockList.push({
+            productId: product.id,
+            productName: product.name,
+            sku: product.sku,
+            requested: item.quantity,
+            available: product.currentStock,
+          });
+        }
+      }
+
+      // 5. If ANY item has insufficient stock, reject whole request with exact structure:
+      // { success: false, message: "Insufficient stock", error: { code: "INSUFFICIENT_STOCK", details: [...] } }
+      if (insufficientStockList.length > 0) {
+        return {
+          errorStatus: 400,
+          message: 'Insufficient stock',
+          error: {
+            code: 'INSUFFICIENT_STOCK',
+            details: insufficientStockList,
+          },
+        };
+      }
+
+      // 6. All items have sufficient stock: reduce currentStock for every product, write one OUT StockMovement per item
+      const stockMovementsCreated = [];
+
+      for (const item of challan.items) {
+        const product = await tx.product.findUniqueOrThrow({
+          where: { id: item.productId },
+        });
+
+        const previousStock = product.currentStock;
+        const newStock = previousStock - item.quantity;
+
+        // Reduce currentStock
+        await tx.product.update({
+          where: { id: product.id },
+          data: { currentStock: newStock },
+        });
+
+        // Write one OUT StockMovement per line item
+        const movement = await tx.stockMovement.create({
+          data: {
+            productId: product.id,
+            userId: req.user!.userId,
+            type: MovementType.OUTWARD,
+            quantity: item.quantity,
+            previousStock,
+            newStock,
+            referenceId: challan.challanNumber,
+            reason: `Dispatched against Sales Challan ${challan.challanNumber} for ${challan.customer.name}`,
+          },
+        });
+        stockMovementsCreated.push(movement);
+      }
+
+      // Set challan status to CONFIRMED (or APPROVED)
+      const confirmedChallan = await tx.salesChallan.update({
+        where: { id },
+        data: {
+          status: ChallanStatus.CONFIRMED,
+          approvedById: req.user!.userId,
+        },
+        include: {
+          customer: true,
+          createdBy: true,
+          approvedBy: true,
+          items: true,
+        },
+      });
+
+      return {
+        success: true,
+        challan: confirmedChallan,
+        movements: stockMovementsCreated,
+      };
+    });
+
+    if ('errorStatus' in result && result.errorStatus) {
+      sendError(res, result.message, result.error, result.errorStatus);
+      return;
+    }
+
+    sendSuccess(
+      res,
+      `Sales Challan ${result.challan!.challanNumber} confirmed successfully. Inventory reduced.`,
+      { challan: result.challan, movements: result.movements },
+      200,
+    );
+  } catch (error) {
+    sendError(res, 'Failed to confirm sales challan transaction', (error as Error).message, 500);
+  }
+};
+
+/**
+ * Cancel Sales Challan: Only allowed while still in DRAFT status.
+ */
+export const cancelChallan = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.salesChallan.findUnique({ where: { id } });
+    if (!existing) {
+      sendError(res, 'Sales challan not found', null, 404);
+      return;
+    }
+
+    // Cancel logic: only allowed while DRAFT; sets status to CANCELLED.
+    if (existing.status !== ChallanStatus.DRAFT) {
+      sendError(
+        res,
+        `Cannot cancel challan in "${existing.status}" status. Only DRAFT challans can be cancelled.`,
+        { code: 'CHALLAN_NOT_DRAFT', currentStatus: existing.status },
+        409,
+      );
+      return;
+    }
+
+    const updated = await prisma.salesChallan.update({
+      where: { id },
+      data: { status: ChallanStatus.CANCELLED },
+      include: { customer: true, items: true },
+    });
+
+    sendSuccess(
+      res,
+      `Sales Challan ${updated.challanNumber} cancelled successfully`,
+      { challan: updated },
+      200,
+    );
+  } catch (error) {
+    sendError(res, 'Failed to cancel sales challan', (error as Error).message, 500);
   }
 };
 
@@ -399,27 +616,5 @@ export const updateChallanStatus = async (req: Request, res: Response): Promise<
     sendSuccess(res, `Challan status updated to ${status}`, { challan: updated });
   } catch (error) {
     sendError(res, 'Failed to update challan status', (error as Error).message, 500);
-  }
-};
-
-export const cancelChallan = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-
-    const existing = await prisma.salesChallan.findUnique({ where: { id } });
-    if (!existing) {
-      sendError(res, 'Sales challan not found', null, 404);
-      return;
-    }
-
-    const updated = await prisma.salesChallan.update({
-      where: { id },
-      data: { status: ChallanStatus.CANCELLED },
-      include: { customer: true },
-    });
-
-    sendSuccess(res, 'Challan cancelled successfully', { challan: updated });
-  } catch (error) {
-    sendError(res, 'Failed to cancel sales challan', (error as Error).message, 500);
   }
 };

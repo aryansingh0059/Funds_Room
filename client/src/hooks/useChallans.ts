@@ -81,3 +81,40 @@ export function useUpdateChallan(id: string) {
     },
   });
 }
+
+export function useConfirmChallan(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<SalesChallan, AxiosError<ApiResponse>, void>({
+    mutationFn: async () => {
+      const res = await apiClient.post<ApiResponse<SingleChallanResponse>>(
+        `/challans/${id}/confirm`,
+      );
+      return (res.data.data as SingleChallanResponse).challan;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['challans'] });
+      queryClient.invalidateQueries({ queryKey: ['challans', id] });
+      queryClient.invalidateQueries({ queryKey: ['inventory'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['movements'] });
+    },
+  });
+}
+
+export function useCancelChallan(id: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation<SalesChallan, AxiosError<ApiResponse>, void>({
+    mutationFn: async () => {
+      const res = await apiClient.post<ApiResponse<SingleChallanResponse>>(
+        `/challans/${id}/cancel`,
+      );
+      return (res.data.data as SingleChallanResponse).challan;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['challans'] });
+      queryClient.invalidateQueries({ queryKey: ['challans', id] });
+    },
+  });
+}

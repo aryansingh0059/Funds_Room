@@ -7,8 +7,9 @@ import {
   getChallanById,
   createChallan,
   updateChallan,
-  updateChallanStatus,
+  confirmChallan,
   cancelChallan,
+  updateChallanStatus,
 } from '../controllers/challans.controller';
 
 const challansRouter = Router();
@@ -31,20 +32,32 @@ challansRouter.patch(
   updateChallan,
 );
 
-// Challan status update (approve/dispatch): ADMIN + WAREHOUSE
+// Critical stock transactions: Confirm and Cancel
+challansRouter.post(
+  '/:id/confirm',
+  authenticateJWT,
+  requireRole(...ROLES.ADMIN_SALES_WAREHOUSE),
+  confirmChallan,
+);
+challansRouter.post(
+  '/:id/cancel',
+  authenticateJWT,
+  requireRole(...ROLES.ADMIN_SALES),
+  cancelChallan,
+);
+challansRouter.patch(
+  '/:id/cancel',
+  authenticateJWT,
+  requireRole(...ROLES.ADMIN_SALES),
+  cancelChallan,
+);
+
+// Challan status update (logistics/status transitions)
 challansRouter.patch(
   '/:id/status',
   authenticateJWT,
   requireRole(...ROLES.ADMIN_WAREHOUSE),
   updateChallanStatus,
-);
-
-// Challan cancellation: ADMIN only
-challansRouter.patch(
-  '/:id/cancel',
-  authenticateJWT,
-  requireRole(...ROLES.ADMIN_ONLY),
-  cancelChallan,
 );
 
 export default challansRouter;
