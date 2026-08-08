@@ -16,7 +16,8 @@
     "db:seed": "tsx src/scripts/seed.ts",
     "db:studio": "prisma studio",
     "test:auth": "tsx src/scripts/test-auth.ts",
-    "test:rbac": "tsx src/scripts/test-rbac.ts"
+    "test:rbac": "tsx src/scripts/test-rbac.ts",
+    "test:customers": "tsx src/scripts/test-customers.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
