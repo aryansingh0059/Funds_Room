@@ -18,7 +18,8 @@
     "test:auth": "tsx src/scripts/test-auth.ts",
     "test:rbac": "tsx src/scripts/test-rbac.ts",
     "test:customers": "tsx src/scripts/test-customers.ts",
-    "test:followups": "tsx src/scripts/test-followups.ts"
+    "test:followups": "tsx src/scripts/test-followups.ts",
+    "test:products": "tsx src/scripts/test-products.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

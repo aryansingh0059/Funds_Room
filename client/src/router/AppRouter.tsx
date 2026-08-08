@@ -5,6 +5,8 @@ import LoginPage from '../pages/auth/LoginPage';
 import CustomersPage from '../pages/customers/CustomersPage';
 import CustomerDetailPage from '../pages/customers/CustomerDetailPage';
 import CustomerFormPage from '../pages/customers/CustomerFormPage';
+import ProductsPage from '../pages/products/ProductsPage';
+import ProductFormPage from '../pages/products/ProductFormPage';
 import PlaceholderPage from '../pages/PlaceholderPage';
 
 const router = createBrowserRouter([
@@ -26,9 +28,11 @@ const router = createBrowserRouter([
       { path: 'customers/new', element: <CustomerFormPage mode="create" /> },
       { path: 'customers/:id', element: <CustomerDetailPage /> },
       { path: 'customers/:id/edit', element: <CustomerFormPage mode="edit" /> },
-      { path: 'products', element: <PlaceholderPage title="Products" subtitle="Product catalog management — coming in Phase 6" /> },
-      { path: 'stock', element: <PlaceholderPage title="Inventory & Stock" subtitle="Warehouse stock management — coming in Phase 7" /> },
-      { path: 'challans', element: <PlaceholderPage title="Sales Challans" subtitle="Dispatch and invoicing — coming in Phase 8" /> },
+      { path: 'products', element: <ProductsPage /> },
+      { path: 'products/new', element: <ProductFormPage mode="create" /> },
+      { path: 'products/:id/edit', element: <ProductFormPage mode="edit" /> },
+      { path: 'stock', element: <PlaceholderPage title="Inventory & Stock" subtitle="Warehouse stock management — coming in Phase 8" /> },
+      { path: 'challans', element: <PlaceholderPage title="Sales Challans" subtitle="Dispatch and invoicing — coming in Phase 9" /> },
       { path: 'reports', element: <PlaceholderPage title="Reports" subtitle="Business intelligence reports — coming soon" /> },
       { path: 'users', element: <PlaceholderPage title="User Management" subtitle="Manage staff accounts and roles — ADMIN only" /> },
     ],
