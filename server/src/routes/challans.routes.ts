@@ -6,6 +6,7 @@ import {
   listChallans,
   getChallanById,
   createChallan,
+  updateChallan,
   updateChallanStatus,
   cancelChallan,
 } from '../controllers/challans.controller';
@@ -16,12 +17,18 @@ const challansRouter = Router();
 challansRouter.get('/', authenticateJWT, requireRole(...ROLES.ALL), listChallans);
 challansRouter.get('/:id', authenticateJWT, requireRole(...ROLES.ALL), getChallanById);
 
-// Challan creation: ADMIN + SALES (WAREHOUSE & ACCOUNTS cannot create)
+// Challan creation & draft editing: ADMIN + SALES (WAREHOUSE & ACCOUNTS cannot create)
 challansRouter.post(
   '/',
   authenticateJWT,
   requireRole(...ROLES.ADMIN_SALES),
   createChallan,
+);
+challansRouter.patch(
+  '/:id',
+  authenticateJWT,
+  requireRole(...ROLES.ADMIN_SALES),
+  updateChallan,
 );
 
 // Challan status update (approve/dispatch): ADMIN + WAREHOUSE
